@@ -1,66 +1,55 @@
-import React from 'react';
-import { View, Text, Button, FlatList, StyleSheet ,ImageBackground } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import backg from "@/assets/images/homeback.avif";
-
-const complaints = ["Delayed service", "Poor maintenance", "Billing issue"]; // Example complaints
 
 export default function ComplaintsScreen() {
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('http://192.168.110.111:5000/get-complaints')
+      .then(res => res.json())
+      .then(data => {
+        setComplaints(data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Error fetching complaints:", error);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <View style={styles.container}>
-        <ImageBackground 
-                source={backg}
-                resizeMode='cover'
-                style={styles.image}>
-        </ImageBackground>
-      <Text style={styles.title}>Complaints</Text>
-      {complaints.length > 0 ? (
-        <FlatList
-          data={complaints}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => <Text style={styles.item}>{item}</Text>}
-        />
-      ) : (
-        <Text style={styles.empty}>Empty</Text>
-      )}
-      <Button title="Go Back" onPress={() => router.back()} />
-      
+      <Text style={styles.heading}>User Complaints</Text>
+      <ScrollView style={styles.list}>
+        {loading ? <ActivityIndicator size="large" color="blue" /> :
+          complaints.length > 0 ? complaints.map((complaint, index) => (
+            <View key={index} style={styles.card}>
+              <Text style={styles.userName}>{complaint.username}</Text>
+              <Text style={styles.complaint}>{complaint.complaint}</Text>
+              <Text style={styles.timestamp}>
+                {new String(complaint.id)}
+              </Text>
+
+            </View>
+          )) : <Text style={styles.empty}>No complaints found.</Text>
+        }
+      </ScrollView>
+      <Text style={styles.backButton} onPress={() => router.back()}>🔙 Back</Text>
     </View>
-    
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  title: {
-    // color: 'white',
-    fontSize: 50,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  item: {
-    // color: 'white',
-    fontSize: 28,
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  empty: {
-    fontSize: 18,
-    color: 'gray',
-  },
-  image: {
-    width: '120%',
-    height: '120%',
-    position: 'absolute', 
-    top: 1, 
-  }
+  container: { flex: 1, padding: 20, backgroundColor: '#f8f8f8' },
+  heading: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
+  list: { flex: 1 },
+  card: { backgroundColor: '#fff', padding: 15, marginBottom: 10, borderRadius: 5, elevation: 3 },
+  userName: { fontWeight: 'bold', fontSize: 16 },
+  message: { fontSize: 14, marginTop: 5 },
+  timestamp: { fontSize: 12, color: 'gray', marginTop: 5 },
+  empty: { textAlign: 'center', fontSize: 16, color: 'gray' },
+  backButton: { textAlign: 'center', color: 'blue', fontSize: 18, marginTop: 20 },
 });
-

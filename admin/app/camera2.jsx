@@ -24,7 +24,7 @@ export default function CameraScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://192.168.0.112:5000/check-id/${data}`);
+      const response = await fetch(`http://192.168.110.111:5000/check-id/${data}`);
       const result = await response.json();
 
       if (result.valid) {
