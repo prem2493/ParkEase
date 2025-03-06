@@ -1,0 +1,62 @@
+.parking-container {
+  text-align: center;
+  padding: 20px;
+}
+
+/* ✅ FIXED: Ensures the grid layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 3 columns */
+  gap: 15px;
+  justify-content: center;
+  align-items: center;
+  margin: 20px auto;
+  max-width: 400px; /* Limits width */
+}
+
+/* ✅ FIXED: Styles for parking spots */
+.spot {
+  width: 120px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 12px;
+  transition: all 0.3s ease-in-out;
+  border: 3px solid black;
+  cursor: pointer;
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+}
+
+/* Available Spot */
+.spot.available {
+  background-color: #4caf50; /* Green */
+  color: white;
+}
+
+.spot.available:hover {
+  background-color: #45a049;
+  transform: scale(1.1);
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* Booked Spot */
+.spot.booked {
+  background-color: #f44336; /* Red */
+  color: white;
+  cursor: not-allowed;
+}
+
+.spot.booked:hover {
+  transform: none;
+}
+
+/* Entry/Exit Styling */
+.entry-exit {
+  margin-top: 20px;
+  font-size: 1.8em;
+  font-weight: bold;
+}
