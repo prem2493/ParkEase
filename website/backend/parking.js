@@ -53,10 +53,10 @@ router.get("/user-bookings/:username", async (req, res) => {
     const result = await pool.query("SELECT * FROM parking_slots WHERE booked_by = $1", [username]);
 
     if (result.rows.length === 0) {
-      return res.json([]); // Return an empty array instead of a message
+      return res.json([]); 
     }
 
-    res.json(result.rows); // Send all booked spots as an array
+    res.json(result.rows); 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
