@@ -45,36 +45,43 @@ router.post("/book", async (req, res) => {
   }
 });
 
-// Get user's booking info
-router.get("/user-booking/:username", async (req, res) => {
+// Get all bookings for a user
+router.get("/user-bookings/:username", async (req, res) => {
   const { username } = req.params;
 
   try {
     const result = await pool.query("SELECT * FROM parking_slots WHERE booked_by = $1", [username]);
-    if (!result.rows.length) {
-      return res.json({ message: "No booking found" });
+
+    if (result.rows.length === 0) {
+      return res.json([]); // Return an empty array instead of a message
     }
 
-    res.json(result.rows[0]);
+    res.json(result.rows); // Send all booked spots as an array
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-
-router.delete("/cancel/:username", async (req, res) => {
-  const { username } = req.params; // Extract username from URL
+// Cancel a specific spot for a user
+router.delete("/cancel/:username/:spot_number", async (req, res) => {
+  const { username, spot_number } = req.params;
 
   try {
-    // Check if user has an active booking
-    const userBooking = await pool.query("SELECT * FROM parking_slots WHERE booked_by = $1", [username]);
+    // Check if the user has booked this specific spot
+    const userBooking = await pool.query(
+      "SELECT * FROM parking_slots WHERE booked_by = $1 AND spot_number = $2",
+      [username, spot_number]
+    );
 
     if (userBooking.rows.length === 0) {
-      return res.status(400).json({ message: "No active booking found" });
+      return res.status(400).json({ message: "No active booking found for this spot" });
     }
 
-    // Remove the booking
-    await pool.query("UPDATE parking_slots SET is_booked = false, booked_by = NULL WHERE booked_by = $1", [username]);
+    // Remove only the selected booking
+    await pool.query(
+      "UPDATE parking_slots SET is_booked = false, booked_by = NULL WHERE booked_by = $1 AND spot_number = $2",
+      [username, spot_number]
+    );
 
     return res.json({ message: "Booking cancelled successfully" });
   } catch (error) {
@@ -82,6 +89,27 @@ router.delete("/cancel/:username", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+router.post("/submit-complaint", async (req, res) => {
+  const { username, complaint } = req.body;
+
+  try {
+    if (!complaint) {
+      return res.status(400).json({ message: "Complaint cannot be empty" });
+    }
+
+    await pool.query(
+      "INSERT INTO complaints (username, complaint) VALUES ($1, $2)",
+      [username, complaint]
+    );
+
+    res.json({ message: "Complaint submitted successfully" });
+  } catch (error) {
+    console.error("Error submitting complaint:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 
 

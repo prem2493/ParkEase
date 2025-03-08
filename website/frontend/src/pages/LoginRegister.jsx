@@ -14,7 +14,7 @@ const LoginRegister = () => {
     const endpoint = isRegister ? "/auth/register" : "/auth/login";
 
     try {
-      const { data } = await axios.post(`http://localhost:5000${endpoint}`, { username, password });
+      const { data } = await axios.post(`http://localhost:5001${endpoint}`, { username, password });
 
       if (!isRegister) {
         // ✅ Store username correctly

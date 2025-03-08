@@ -3,18 +3,16 @@
   padding: 20px;
 }
 
-/* ✅ FIXED: Ensures the grid layout */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 3 columns */
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
   justify-content: center;
   align-items: center;
   margin: 20px auto;
-  max-width: 400px; /* Limits width */
+  max-width: 400px;
 }
 
-/* ✅ FIXED: Styles for parking spots */
 .spot {
   width: 120px;
   height: 80px;
@@ -24,39 +22,39 @@
   font-size: 18px;
   font-weight: bold;
   border-radius: 12px;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.3s;
   border: 3px solid black;
   cursor: pointer;
   box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
   text-transform: uppercase;
 }
 
-/* Available Spot */
 .spot.available {
-  background-color: #4caf50; /* Green */
+  background-color: #4caf50;
   color: white;
 }
-
 .spot.available:hover {
-  background-color: #45a049;
+  background-color: #388e3c;
   transform: scale(1.1);
-  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
 }
 
-/* Booked Spot */
 .spot.booked {
-  background-color: #f44336; /* Red */
+  background-color: #f44336;
   color: white;
   cursor: not-allowed;
 }
 
-.spot.booked:hover {
-  transform: none;
+.spot.selected {
+  border: 3px solid yellow;
+  background-color: #ffeb3b;
+  color: black;
 }
 
-/* Entry/Exit Styling */
-.entry-exit {
+.booking-panel {
   margin-top: 20px;
-  font-size: 1.8em;
-  font-weight: bold;
+  padding: 10px;
+  border: 2px solid black;
+  display: inline-block;
+  background: #0e81183b;
+  box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
 }

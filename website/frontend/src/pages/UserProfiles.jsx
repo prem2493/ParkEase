@@ -4,8 +4,8 @@ import "./UserProfiles.css";
 
 const UserProfile = () => {
   const navigate = useNavigate();
-  const [booking, setBooking] = useState(null);
-  
+  const [bookings, setBookings] = useState([]); // Change to array to store multiple bookings
+
   // Fetch username & token from localStorage
   const username = localStorage.getItem("username");
   const token = localStorage.getItem("token");
@@ -17,75 +17,72 @@ const UserProfile = () => {
       return;
     }
 
-    fetchBooking();
+    fetchBookings();
   }, []);
 
-  // Fetch user's booking info
-  const fetchBooking = async () => {
+  // Fetch user's multiple bookings
+  const fetchBookings = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/parking/user-booking/${username}`, {
+      const response = await fetch(`http://localhost:5001/parking/user-bookings/${username}`, {
         headers: { Authorization: `Bearer ${token}` }, // Include token in request
       });
 
       const data = await response.json();
-      if (data.message === "No booking found") {
-        setBooking(null);
+      if (data.length === 0) {
+        setBookings([]);
       } else {
-        setBooking(data);
+        setBookings(data); // Store multiple bookings
       }
     } catch (error) {
       console.error("Error fetching booking info:", error);
     }
   };
 
-  const cancelBooking = async () => {
+  // Cancel a specific booking
+  const cancelBooking = async (spotNumber) => {
     try {
-      const response = await fetch(`http://localhost:5000/parking/cancel/${username}`, {
-        method: "DELETE", // DELETE method for cancellation
-        headers: { Authorization: `Bearer ${token}` }, // Include token in request headers
+      const response = await fetch(`http://localhost:5000/parking/cancel/${username}/${spotNumber}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       const data = await response.json();
       if (data.message === "Booking cancelled successfully") {
         alert(data.message);
-        setBooking(null); // Clear booking from UI after cancellation
+        setBookings((prevBookings) => prevBookings.filter((b) => b.spot_number !== spotNumber)); // Remove from UI
       } else {
-        alert(data.message); // Show error message if any
+        alert(data.message);
       }
     } catch (error) {
       console.error("Error cancelling booking:", error);
       alert("Something went wrong!");
     }
   };
-  
-  
-  
 
   return (
     <div className="profile-container">
       <h2>User Profile</h2>
       <h3>Username: {username || "Unknown"}</h3>
 
-      {booking ? (
-        <div>
-        <p>Your booked parking spot: <strong>{booking.spot_number}</strong></p>
-        <p>QR Ticket:</p>
-        <img 
-          src={`/assets/${booking.spot_number}.png`}  
-          
-          alt={`QR Code for Spot ${booking.spot_number}`} 
-          style={{ width: "200px" }} 
-          
-        />
-      </div>
+      {bookings.length > 0 ? (
+        <div className="booking-list">
+          {bookings.map((booking) => (
+            <div key={booking.spot_number} className="booking-item">
+              <p>Your booked parking spot: <strong>{booking.spot_number}</strong></p>
+              <p>QR Ticket:</p>
+              <img 
+                src={`/assets/${booking.spot_number}.png`}  
+                alt={`QR Code for Spot ${booking.spot_number}`} 
+                className="qr-ticket"
+              />
+              <button onClick={() => cancelBooking(booking.spot_number)} className="cancel-btn">
+                Cancel Booking
+              </button>
+            </div>
+          ))}
+        </div>
       ) : (
         <p>You have no active bookings.</p>
-      )}
-
-      {booking && (
-      <button onClick={cancelBooking} style={{ marginTop: "10px", padding: "10px", backgroundColor: "red", color: "white" }}>
-      Cancel Booking
-      </button>
       )}
 
       <button onClick={() => navigate("/main")}>Back to Parking</button>
