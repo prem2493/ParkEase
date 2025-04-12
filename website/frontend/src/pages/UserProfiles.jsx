@@ -4,41 +4,32 @@ import "./UserProfiles.css";
 
 const UserProfile = () => {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState([]); // Change to array to store multiple bookings
+  const [bookings, setBookings] = useState([]);
 
-  // Fetch username & token from localStorage
   const username = localStorage.getItem("username");
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    // Redirect to login if no token
     if (!token) {
       navigate("/");
       return;
     }
-
     fetchBookings();
   }, []);
 
-  // Fetch user's multiple bookings
   const fetchBookings = async () => {
     try {
       const response = await fetch(`http://localhost:5001/parking/user-bookings/${username}`, {
-        headers: { Authorization: `Bearer ${token}` }, // Include token in request
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await response.json();
-      if (data.length === 0) {
-        setBookings([]);
-      } else {
-        setBookings(data); // Store multiple bookings
-      }
+      setBookings(data.length ? data : []);
     } catch (error) {
       console.error("Error fetching booking info:", error);
     }
   };
 
-  // Cancel a specific booking
   const cancelBooking = async (spotNumber) => {
     try {
       const response = await fetch(`http://localhost:5001/parking/cancel/${username}/${spotNumber}`, {
@@ -47,11 +38,9 @@ const UserProfile = () => {
       });
 
       const data = await response.json();
+      alert(data.message);
       if (data.message === "Booking cancelled successfully") {
-        alert(data.message);
-        setBookings((prevBookings) => prevBookings.filter((b) => b.spot_number !== spotNumber)); // Remove from UI
-      } else {
-        alert(data.message);
+        setBookings((prev) => prev.filter((b) => b.spot_number !== spotNumber));
       }
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -64,28 +53,29 @@ const UserProfile = () => {
       <h2>User Profile</h2>
       <h3>Username: {username || "Unknown"}</h3>
 
-      {bookings.length > 0 ? (
-        <div className="booking-list">
-          {bookings.map((booking) => (
-            <div key={booking.spot_number} className="booking-item">
-              <p>Your booked parking spot: <strong>{booking.spot_number}</strong></p>
-              <p>QR Ticket:</p>
+      <div className="booking-wrapper">
+        {bookings.length > 0 ? (
+          bookings.map((booking) => (
+            <div key={booking.spot_number} className="booking-card">
+              <p>Spot Number: <strong>{booking.spot_number}</strong></p>
               <img 
                 src={`/assets/${booking.spot_number}.png`}  
                 alt={`QR Code for Spot ${booking.spot_number}`} 
                 className="qr-ticket"
-              />
+              /><br></br>
               <button onClick={() => cancelBooking(booking.spot_number)} className="cancel-btn">
                 Cancel Booking
-              </button>
+          </button>
             </div>
-          ))}
-        </div>
-      ) : (
-        <p>You have no active bookings.</p>
-      )}
+            
+          ))
+        ) : (
+          <p className="no-bookings">You have no active bookings.</p>
+        )}
+      </div>
 
-      <button onClick={() => navigate("/main")}>Back to Parking</button>
+      
+      <button onClick={() => navigate("/main")} className="back-btn">Back to Parking</button>
     </div>
   );
 };

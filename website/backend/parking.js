@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const { Pool } = require("pg");
-
-// Hardcoded Neon connection string (replace with your actual Neon details)
+const { Server } = require('socket.io');
 const pool = new Pool({
     connectionString: "postgresql://neondb_owner:npg_oTga8PRHvjZ3@ep-twilight-morning-a1bzekb2-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
-    ssl: { rejectUnauthorized: false } // Required for Neon SSL
+    ssl: { rejectUnauthorized: false },
 });
 
-// Fetch parking lot status
+let io; 
+const setIo = (socketIo) => {
+  io = socketIo;
+};
+
 router.get("/", async (req, res) => {
     try {
         const result = await pool.query("SELECT * FROM parking_slots ORDER BY spot_number");
@@ -18,30 +21,60 @@ router.get("/", async (req, res) => {
     }
 });
 
-// Book a spot
-router.post("/book", async (req, res) => {
-    const { spot_number, username } = req.body;
-    console.log("Received book request for username:", username); // Updated debug message to match intent
+router.get("/areas", async (req, res) => {
     try {
-        // Check if the spot is available
-        const spot = await pool.query("SELECT * FROM parking_slots WHERE spot_number = $1", [spot_number]);
-        if (!spot.rows.length || spot.rows[0].is_booked) {
-            return res.status(400).json({ message: "Spot is already booked or does not exist" });
-        }
-
-        // Book the spot
-        await pool.query(
-            "UPDATE parking_slots SET is_booked = TRUE, booked_by = $1 WHERE spot_number = $2",
-            [username, spot_number]
-        );
-
-        res.json({ message: "Booking successful", spot_number });
+        const result = await pool.query("SELECT * FROM parking_spaces");
+        res.json(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Get all bookings for a user
+router.get('/slots/:areaId', async (req, res) => {
+    try {
+      const slots = await pool.query(
+        `SELECT * FROM slots WHERE parking_space_id = ${req.params.areaId}`
+      );
+      res.json(slots.rows);
+    } catch (error) {
+        console.error("Error fetching slots:", error); 
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+
+// Book a spot
+router.post('/book', async (req, res) => {
+    const { spot_number, username } = req.body;
+    console.log('Received book request for spot:', spot_number, 'by:', username);
+    try {
+      await pool.query('BEGIN');
+  
+      const spotCheck = await pool.query('SELECT * FROM slots WHERE id = $1 FOR UPDATE', [spot_number]);
+      if (!spotCheck.rows.length || spotCheck.rows[0].reserved) {
+        await pool.query('ROLLBACK');
+        return res.status(400).json({ message: 'Spot is already booked or does not exist' });
+      }
+  
+      await pool.query('UPDATE slots SET reserved = TRUE WHERE id = $1', [spot_number]);
+      await pool.query('INSERT INTO bookings (parkslot, booked_by) VALUES ($1, $2)', [spot_number, username]);
+  
+      await pool.query('COMMIT');
+  
+      if (io) {
+        const updatedSpot = { spot_number, reserved: true, username };
+        io.emit('bookingUpdate', updatedSpot);
+        console.log('Emitted bookingUpdate:', updatedSpot);
+      }
+  
+      res.json({ message: 'Booking successful', spot_number });
+    } catch (err) {
+      await pool.query('ROLLBACK');
+      console.error('Error booking spot:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
 router.get("/user-bookings/:username", async (req, res) => {
     const { username } = req.params;
     try {
@@ -64,9 +97,6 @@ router.delete("/cancel/:username/:spot_number", async (req, res) => {
             "SELECT * FROM parking_slots WHERE booked_by = $1 AND spot_number = $2",
             [username, spot_number]
         );
-        if (userBooking.rows.length === 0) {
-            return res.status(400).json({ message: "No active booking found for this spot" });
-        }
 
         // Remove only the selected booking
         await pool.query(
@@ -100,3 +130,4 @@ router.post("/submit-complaint", async (req, res) => {
 });
 
 module.exports = router;
+module.exports.setIo = setIo;

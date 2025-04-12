@@ -43,6 +43,7 @@ app.get('/check-and-delete/:id', async (req, res) => {
       setTimeout(async () => {
         await pool.query('DELETE FROM bookings WHERE parkslot = $1', [id]);
         console.log(`Deleted entry with id: ${id}`);
+        await pool.query('UPDATE parking_slots SET is_booked = FALSE, booked_by = NULL WHERE spot_number=$1',[id]);
       }, 1000); // 1-second delay
 
     } else {

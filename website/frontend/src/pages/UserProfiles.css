@@ -1,45 +1,66 @@
 .profile-container {
   text-align: center;
   padding: 20px;
-}
-
-.booking-list {
-  max-height: 300px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding: 10px;
-  border: 2px solid #ddd;
+  background: linear-gradient(135deg, #6e5ce3, #f03c20);
+  color: white;
   border-radius: 10px;
-  background: #f9f9f9;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  width: 300px;
 }
 
-.booking-item {
-  border: 1px solid #aaa;
-  padding: 10px;
+.booking-wrapper {
+  margin-top: 20px;
+}
+
+.booking-card {
+  background: #ffffff;
+  color: black;
   border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #fff;
+  padding: 15px;
+  margin: 10px auto;
+  max-width: 300px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+}
+
+.booking-card:hover {
+  transform: scale(1.05);
 }
 
 .qr-ticket {
-  width: 150px;
-  margin-top: 10px;
+  width: 120px;
+  margin: 10px 0;
 }
 
 .cancel-btn {
-  margin-top: 10px;
-  padding: 8px 12px;
-  background-color: red;
+  padding: 10px 15px;
+  background-color: #f03c20;
   color: white;
   border: none;
-  cursor: pointer;
   border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 
 .cancel-btn:hover {
-  background-color: darkred;
+  background-color: #d32f2f;
+}
+
+.no-bookings {
+  font-style: italic;
+}
+
+.back-btn {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #6e5ce3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.back-btn:hover {
+  background-color: #5641a1;
 }

@@ -20,7 +20,7 @@ const LoginRegister = () => {
         // ✅ Store username correctly
         localStorage.setItem("token", data.token);
         localStorage.setItem("username", data.username); // Fixed 'Username' to 'username'
-        navigate("/main");
+        navigate("/");
       } else {
         alert("Registration successful, please login!");
         setIsRegister(false);
@@ -32,6 +32,10 @@ const LoginRegister = () => {
 
   return (
     <div className="container">
+      <div className="logo-container">
+        <img src="/assets/logo.jpg" alt="Logo" className="logo-image" />
+        <h1 className="logo-text">ParkEase</h1>
+       </div>
       <div className="form-container">
         <h2>{isRegister ? "Register" : "Login"}</h2>
         <form onSubmit={handleSubmit}>
