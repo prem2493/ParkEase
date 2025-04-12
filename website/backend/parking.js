@@ -24,7 +24,6 @@ router.get("/", async (req, res) => {
 // Book a spot
 router.post("/book", async (req, res) => {
   const { spot_number, username } = req.body;
-  console.log("Received cancel request for username:", username); // Debugging line
 
   try {
     // Check if the spot is available
@@ -38,6 +37,7 @@ router.post("/book", async (req, res) => {
       "UPDATE parking_slots SET is_booked = TRUE, booked_by = $1 WHERE spot_number = $2",
       [username, spot_number]
     );
+    await pool.query("insert into bookings (parkslot) values ($1)", [spot_number]);
 
     res.json({ message: "Booking successful", spot_number });
   } catch (err) {
@@ -82,7 +82,7 @@ router.delete("/cancel/:username/:spot_number", async (req, res) => {
       "UPDATE parking_slots SET is_booked = false, booked_by = NULL WHERE booked_by = $1 AND spot_number = $2",
       [username, spot_number]
     );
-
+    await pool.query("delete from bookings where parkslot=$1", [spot_number]);
     return res.json({ message: "Booking cancelled successfully" });
   } catch (error) {
     console.error("Error cancelling booking:", error);
