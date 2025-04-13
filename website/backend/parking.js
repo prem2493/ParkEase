@@ -88,12 +88,12 @@ router.get("/user-bookings/:username", async (req, res) => {
 });
 
 router.delete("/cancel/:username/:spot_number", async (req, res) => {
-    console.log(spot_number);
     const { username, spot_number } = req.params;
+    console.log(spot_number);
     try {
         // Check if the user has booked this specific spot
         const userBooking = await pool.query(
-            "SELECT * FROM bookings WHERE booked_by = $1 AND parkslot = $2",
+            "delete from bookings where booked_by = $1 and parkslot = $2",
             [username, spot_number]
         );
 

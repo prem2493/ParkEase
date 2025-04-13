@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import io from 'socket.io-client';
 import "./UserProfiles.css";
 
 const UserProfile = () => {
@@ -40,7 +41,7 @@ const UserProfile = () => {
       const data = await response.json();
       alert(data.message);
       if (data.message === "Booking cancelled successfully") {
-        setBookings((prev) => prev.filter((b) => b.spot_number !== spotNumber));
+        setBookings((prev) => prev.filter((b) => b.parkslot !== parkslot));
       }
     } catch (error) {
       console.error("Error cancelling booking:", error);
