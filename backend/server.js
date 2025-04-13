@@ -8,17 +8,16 @@ app.use(cors());
 app.use(express.json());
 
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'parkease', 
-  password: process.env.DB_PASSWORD || '222414',
-  port: process.env.DB_PORT || 5432,
+  connectionString: "postgresql://neondb_owner:npg_oTga8PRHvjZ3@ep-twilight-morning-a1bzekb2-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require",
+  ssl: { rejectUnauthorized: false } 
 });
 
 
 app.get('/check-id/:id', async (req, res) => {
   const { id } = req.params;
   try {
+    const t = new Date().toISOString();
+    await pool.query('insert into bookings (parkslot,entrytime) values ($1, $2)',[id,t]);
     const result = await pool.query('SELECT entrytime FROM bookings WHERE parkslot = $1', [id]);
     if (result.rows.length > 0) {
       res.json({ valid: true, entrytime: result.rows[0].entrytime });

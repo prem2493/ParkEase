@@ -8,7 +8,7 @@ export default function ComplaintsScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    fetch('http://10.0.0.2:5000/get-complaints')
+    fetch('http://192.168.0.158:5000/get-complaints')
       .then(res => res.json())
       .then(data => {
         setComplaints(data);
