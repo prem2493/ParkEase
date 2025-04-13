@@ -43,7 +43,6 @@ router.get('/slots/:areaId', async (req, res) => {
   });
 
 
-// Book a spot
 router.post('/book', async (req, res) => {
     const { spot_number, username } = req.body;
     console.log('Received book request for spot:', spot_number, 'by:', username);
@@ -78,7 +77,7 @@ router.post('/book', async (req, res) => {
 router.get("/user-bookings/:username", async (req, res) => {
     const { username } = req.params;
     try {
-        const result = await pool.query("SELECT * FROM parking_slots WHERE booked_by = $1", [username]);
+        const result = await pool.query("SELECT * FROM bookings WHERE booked_by = $1", [username]);
         if (result.rows.length === 0) {
             return res.json([]);
         }
@@ -88,20 +87,19 @@ router.get("/user-bookings/:username", async (req, res) => {
     }
 });
 
-// Cancel a specific spot for a user
 router.delete("/cancel/:username/:spot_number", async (req, res) => {
     const { username, spot_number } = req.params;
     try {
         // Check if the user has booked this specific spot
         const userBooking = await pool.query(
-            "SELECT * FROM parking_slots WHERE booked_by = $1 AND spot_number = $2",
+            "SELECT * FROM bookings WHERE booked_by = $1 AND id = $2",
             [username, spot_number]
         );
 
         // Remove only the selected booking
         await pool.query(
-            "UPDATE parking_slots SET is_booked = FALSE, booked_by = NULL WHERE booked_by = $1 AND spot_number = $2",
-            [username, spot_number]
+            "UPDATE slots SET reserved = FALSE, booked_by = NULL WHERE id = $1",
+            [spot_number]
         );
 
         return res.json({ message: "Booking cancelled successfully" });

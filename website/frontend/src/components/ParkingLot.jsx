@@ -17,11 +17,7 @@ const ParkingLot = ({ token }) => {
 
   useEffect(() => {
     console.log('useEffect running with areaId:', areaId, 'token:', token);
-    if (!token) {
-      console.log('Token is falsy, redirecting to /');
-      navigate('/');
-      return; // Exit early
-    }
+    
 
     // Initialize socket only if not already set
     if (!socketRef.current) {

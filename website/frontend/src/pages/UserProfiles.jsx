@@ -56,14 +56,14 @@ const UserProfile = () => {
       <div className="booking-wrapper">
         {bookings.length > 0 ? (
           bookings.map((booking) => (
-            <div key={booking.spot_number} className="booking-card">
-              <p>Spot Number: <strong>{booking.spot_number}</strong></p>
+            <div key={booking.id} className="booking-card">
+              <p>Spot Number: <strong>{booking.idi}</strong></p>
               <img 
-                src={`/assets/${booking.spot_number}.png`}  
-                alt={`QR Code for Spot ${booking.spot_number}`} 
+                src={`/assets/${booking.id}.png`}  
+                alt={`QR Code for Spot ${booking.id}`} 
                 className="qr-ticket"
               /><br></br>
-              <button onClick={() => cancelBooking(booking.spot_number)} className="cancel-btn">
+              <button onClick={() => cancelBooking(booking.id)} className="cancel-btn">
                 Cancel Booking
           </button>
             </div>
