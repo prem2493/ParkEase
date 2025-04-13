@@ -30,9 +30,9 @@ const UserProfile = () => {
     }
   };
 
-  const cancelBooking = async (spotNumber) => {
+  const cancelBooking = async (id) => {
     try {
-      const response = await fetch(`http://localhost:5001/parking/cancel/${username}/${spotNumber}`, {
+      const response = await fetch(`http://localhost:5001/parking/cancel/${username}/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
