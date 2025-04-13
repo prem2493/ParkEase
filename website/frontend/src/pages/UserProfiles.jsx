@@ -30,9 +30,9 @@ const UserProfile = () => {
     }
   };
 
-  const cancelBooking = async (id) => {
+  const cancelBooking = async (parkslot) => {
     try {
-      const response = await fetch(`http://localhost:5001/parking/cancel/${username}/${id}`, {
+      const response = await fetch(`http://localhost:5001/parking/cancel/${username}/${parkslot}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -56,14 +56,14 @@ const UserProfile = () => {
       <div className="booking-wrapper">
         {bookings.length > 0 ? (
           bookings.map((booking) => (
-            <div key={booking.id} className="booking-card">
-              <p>Spot Number: <strong>{booking.idi}</strong></p>
+            <div key={booking.parkslot} className="booking-card">
+              <p>Spot Number: <strong>{booking.parkslot}</strong></p>
               <img 
-                src={`/assets/${booking.id}.png`}  
-                alt={`QR Code for Spot ${booking.id}`} 
+                src={`/assets/${booking.parkslot}.png`}  
+                alt={`QR Code for Spot ${booking.parkslot}`} 
                 className="qr-ticket"
               /><br></br>
-              <button onClick={() => cancelBooking(booking.id)} className="cancel-btn">
+              <button onClick={() => cancelBooking(booking.parkslot)} className="cancel-btn">
                 Cancel Booking
           </button>
             </div>
