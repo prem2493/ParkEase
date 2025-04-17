@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import io from 'socket.io-client';
 import "./UserProfiles.css";
 
+const socket = io("http://localhost:5001"); // change this to your backend URL
+
 const UserProfile = () => {
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
@@ -15,7 +17,20 @@ const UserProfile = () => {
       navigate("/");
       return;
     }
+
     fetchBookings();
+
+    // 👂 Listen for real-time booking updates
+    socket.on("booking-updated", (updatedBooking) => {
+      if (updatedBooking.username === username) {
+        fetchBookings(); // refresh bookings for the current user
+      }
+    });
+
+    // 🧹 Clean up socket connection
+    return () => {
+      socket.off("booking-updated");
+    };
   }, []);
 
   const fetchBookings = async () => {
@@ -42,6 +57,12 @@ const UserProfile = () => {
       alert(data.message);
       if (data.message === "Booking cancelled successfully") {
         setBookings((prev) => prev.filter((b) => b.parkslot !== parkslot));
+
+        // 📨 Optionally notify server via socket
+        socket.emit("booking-cancelled", {
+          username,
+          parkslot,
+        });
       }
     } catch (error) {
       console.error("Error cancelling booking:", error);
@@ -63,19 +84,17 @@ const UserProfile = () => {
                 src={`/assets/${booking.parkslot}.png`}  
                 alt={`QR Code for Spot ${booking.parkslot}`} 
                 className="qr-ticket"
-              /><br></br>
+              /><br />
               <button onClick={() => cancelBooking(booking.parkslot)} className="cancel-btn">
                 Cancel Booking
-          </button>
+              </button>
             </div>
-            
           ))
         ) : (
           <p className="no-bookings">You have no active bookings.</p>
         )}
       </div>
 
-      
       <button onClick={() => navigate("/main")} className="back-btn">Back to Parking</button>
     </div>
   );

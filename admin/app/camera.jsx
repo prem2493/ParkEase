@@ -24,7 +24,7 @@ export default function CameraScreen() {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://192.168.236.110:5000/check-and-delete/${data}`);
+      const response = await fetch(`http://192.168.1.16:5000/check-and-delete/${data}`);
       const result = await response.json();
 
       if (result.valid) {
