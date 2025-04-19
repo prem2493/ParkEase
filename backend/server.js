@@ -15,10 +15,12 @@ const pool = new Pool({
 
 app.get('/check-id/:id', async (req, res) => {
   const { id } = req.params;
+  console.log(id);
   try {
     const t = new Date().toISOString();
-    await pool.query('insert into bookings (parkslot,entrytime) values ($1, $2)',[id,t]);
-    const result = await pool.query('SELECT entrytime FROM bookings WHERE parkslot = $1', [id]);
+    await pool.query('update bookings set entrytime = $2  where id = $1',[id,t]);
+    await pool.query('update slots set parked = TRUE  where id = $1',[id]);
+    const result = await pool.query('SELECT entrytime FROM bookings WHERE id = $1', [id]);
     if (result.rows.length > 0) {
       res.json({ valid: true, entrytime: result.rows[0].entrytime });
     } else {
@@ -33,7 +35,7 @@ app.get('/check-id/:id', async (req, res) => {
 app.get('/check-and-delete/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query('SELECT entrytime FROM bookings WHERE parkslot = $1', [id]);
+    const result = await pool.query('SELECT entrytime FROM bookings WHERE id=$1', [id]);
 
     if (result.rows.length > 0) {
       const entryTime = result.rows[0].entrytime;
@@ -41,8 +43,9 @@ app.get('/check-and-delete/:id', async (req, res) => {
       res.json({ valid: true, entrytime: entryTime });
 
       setTimeout(async () => {
-        await pool.query('DELETE FROM bookings WHERE parkslot = $1', [id]);
+        await pool.query('DELETE FROM bookings WHERE id = $1', [id]);
         console.log(`Deleted entry with id: ${id}`);
+        await pool.query('UPDATE slots SET reserved = FALSE,parked=FALSE WHERE id=$1',[id]);
       }, 1000); // 1-second delay
 
     } else {

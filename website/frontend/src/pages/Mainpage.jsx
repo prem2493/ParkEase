@@ -1,72 +1,72 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import ParkingLot from "../components/ParkingLot";
-import "./Mainpage.css";
+// client/src/pages/MainPage.jsx
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ParkingAreas from '../components/ParkingAreas';
+import './Mainpage.css';
 
 const MainPage = () => {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
   const [showComplaintForm, setShowComplaintForm] = useState(false);
-  const [complaint, setComplaint] = useState("");
+  const [complaint, setComplaint] = useState('');
+  const token = localStorage.getItem('token');
 
   const submitComplaint = async () => {
     if (!complaint.trim()) {
-      alert("Complaint cannot be empty");
+      alert('Complaint cannot be empty');
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5001/parking/submit-complaint", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const username = localStorage.getItem('username');
+      const response = await fetch('http://localhost:5001/parking/submit-complaint', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ username, complaint }),
       });
 
       const data = await response.json();
       alert(data.message);
-      setComplaint("");
+      setComplaint('');
       setShowComplaintForm(false);
     } catch (error) {
-      console.error("Error submitting complaint:", error);
-      alert("Something went wrong");
+      console.error('Error submitting complaint:', error);
+      alert('Something went wrong');
     }
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUsername = localStorage.getItem("username");
-
-    if (!token) {
-      navigate("/");
-    } else {
-      setUsername(storedUsername);
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
+      navigate('/');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="main-container">
-      <h1 >Welcome, {username|| "User"}!</h1>
+      {/* Parking Areas as a separate block */}
+      <div className="parking-areas-block">
+        <ParkingAreas token={token} />
+      </div>
 
-     
-      <ParkingLot username={username} />
-
-      {/* Buttons for Profile and Logout */}
+      {/* Buttons for Profile, Complaints, and Logout */}
       <div className="top-right-buttons">
-        <button onClick={() => navigate("/profile")}>User Profile</button>
-        <button onClick={() => setShowComplaintForm(true)} >
-          Complaints
-        </button>
+        <button onClick={() => navigate('/profile')}>User Profile</button>
+        <button onClick={() => setShowComplaintForm(true)}>Complaints</button>
         <button
           onClick={() => {
-            localStorage.removeItem("token");
-            localStorage.removeItem("username");
-            navigate("/");
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/');
           }}
-          style={{ marginLeft: "10px" }}
+          style={{ marginLeft: '10px' }}
         >
           Logout
         </button>
       </div>
+
       {showComplaintForm && (
         <div className="complaint-modal">
           <h3>Submit a Complaint</h3>
