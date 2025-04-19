@@ -44,7 +44,7 @@ router.get('/slots/:areaId', async (req, res) => {
 
 
 router.post('/book', async (req, res) => {
-    const { spot_number, username } = req.body;
+    const { spot_number, username , slot} = req.body;
     console.log('Received book request for spot:', spot_number, 'by:', username);
     try {
       await pool.query('BEGIN');
@@ -56,7 +56,7 @@ router.post('/book', async (req, res) => {
       }
   
       await pool.query('UPDATE slots SET reserved = TRUE WHERE id = $1', [spot_number]);
-      await pool.query('INSERT INTO bookings (parkslot, booked_by) VALUES ($1, $2)', [spot_number, username]);
+      await pool.query('INSERT INTO bookings (parkslot, booked_by, id) VALUES ($3, $2,$1)', [spot_number, username, slot]);
   
       await pool.query('COMMIT');
   
@@ -87,13 +87,26 @@ router.get("/user-bookings/:username", async (req, res) => {
     }
 });
 
+router.get("/user/:username", async (req, res) => {
+    const { username } = req.params;
+    try {
+        const result = await pool.query("SELECT * FROM users WHERE username = $1", [username]);
+        if (result.rows.length === 0) {
+            return res.json([]);
+        }
+        console.log(result.rows);
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 router.delete("/cancel/:username/:spot_number", async (req, res) => {
     const { username, spot_number } = req.params;
     console.log(spot_number);
     try {
         // Check if the user has booked this specific spot
         const userBooking = await pool.query(
-            "delete from bookings where booked_by = $1 and parkslot = $2",
+            "delete from bookings where booked_by = $1 and id = $2",
             [username, spot_number]
         );
 
@@ -102,6 +115,11 @@ router.delete("/cancel/:username/:spot_number", async (req, res) => {
             "UPDATE slots SET reserved = FALSE WHERE id = $1",
             [spot_number]
         );
+        if (io) {
+        const updatedBooking = { username };
+        io.emit('booking-updated', updatedBooking);
+        console.log('Emitted bookingUpdate:', updatedBooking);
+        }
 
         return res.json({ message: "Booking cancelled successfully" });
     } catch (err) {

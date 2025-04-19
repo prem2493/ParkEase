@@ -14,15 +14,15 @@ const SECRET_KEY = "your_secret_key";
 
 // Register Route
 router.post("/register", async (req, res) => {
-    const { username, password } = req.body;
+    const { username, password , name, email, phone} = req.body;
     try {
         if (!username || !password) {
             return res.status(400).json({ message: "Username and password are required" });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
         await pool.query(
-            "INSERT INTO users (username, password) VALUES ($1, $2)",
-            [username, hashedPassword]
+            "INSERT INTO users (username, password, name, email, phone) VALUES ($1, $2,$3,$4,$5)",
+            [username, hashedPassword, name, email, phone]
         );
         res.json({ message: "User registered successfully!" });
     } catch (err) {
@@ -49,5 +49,6 @@ router.post("/login", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 module.exports = router;

@@ -1,5 +1,7 @@
 .landing-content {
     display: flex;
+    margin-top: 10%;
+    margin-left: 5%;
     justify-content: space-between;
     align-items: center;
     padding: 80px 40px;
