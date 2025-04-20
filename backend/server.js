@@ -37,7 +37,7 @@ app.get('/check-and-delete/:id', async (req, res) => {
   try {
     const result = await pool.query('SELECT entrytime FROM bookings WHERE id=$1', [id]);
 
-    if (result.rows.length > 0) {
+    if (result.rows.length > 0 && result.rows[0].entrytime!== null) {
       const entryTime = result.rows[0].entrytime;
       console.log(entryTime);
       res.json({ valid: true, entrytime: entryTime });
@@ -46,7 +46,7 @@ app.get('/check-and-delete/:id', async (req, res) => {
         await pool.query('DELETE FROM bookings WHERE id = $1', [id]);
         console.log(`Deleted entry with id: ${id}`);
         await pool.query('UPDATE slots SET reserved = FALSE,parked=FALSE WHERE id=$1',[id]);
-      }, 1000); // 1-second delay
+      }, 1000); 
 
     } else {
       res.json({ valid: false });
