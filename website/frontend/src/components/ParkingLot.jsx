@@ -1,169 +1,165 @@
-import React, { useState, useEffect } from "react";
-import "./ParkingLot.css";
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import io from 'socket.io-client';
+import './ParkingLot.css';
 
-const ParkingLot = ({ username }) => {
+const ParkingLot = ({ token }) => {
+  const { areaId } = useParams();
+  const navigate = useNavigate();
   const [spots, setSpots] = useState([]);
+  const [username, setUsername] = useState('');
   const [selectedSpot, setSelectedSpot] = useState(null);
+  const [selectedid, setSelectedid] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState('');
+  const [showComplaintForm, setShowComplaintForm] = useState(false);
 
-  // Static spot positions (coordinates and labels)
-  const staticSpots = [
-    { spot_number: 1, x: 220, y: 80, label: "1" },
-    { spot_number: 2, x: 320, y: 80, label: "2" },
-    { spot_number: 3, x: 420, y: 80, label: "3" },
-    { spot_number: 4, x: 220, y: 180, label: "4" },
-    { spot_number: 5, x: 320, y: 180, label: "5" },
-    { spot_number: 6, x: 420, y: 180, label: "6" },
-  ];
+  const socketRef = useRef();
 
-  // Fetch data from the backend on component mount
   useEffect(() => {
-    fetchParkingData();
-  }, []);
+    if (!socketRef.current) {
+      socketRef.current = io('http://localhost:5001', {
+        auth: { token },
+      });
+    }
+
+    const socket = socketRef.current;
+    const storedUsername = localStorage.getItem('username');
+    setUsername(storedUsername || 'User');
+
+    if (spots.length === 0) {
+      fetchParkingData();
+    }
+
+    const handleBookingUpdate = (updatedSpot) => {
+      if (updatedSpot && updatedSpot.spot_number) {
+        setSpots((prevSpots) =>
+          prevSpots.map((spot) =>
+            spot.id === updatedSpot.spot_number
+              ? { ...spot, reserved: updatedSpot.reserved }
+              : spot
+          )
+        );
+      }
+    };
+
+    socket.on('bookingUpdate', handleBookingUpdate);
+
+    return () => {
+      socket.off('bookingUpdate', handleBookingUpdate);
+    };
+  }, [areaId, token, spots.length]);
 
   const fetchParkingData = async () => {
+    setLoading(true);
     try {
-      const response = await fetch("http://localhost:5001/parking");
-      const backendData = await response.json();
-
-      // Merge static coordinates with backend data
-      const mergedData = staticSpots.map((staticSpot) => {
-        const dynamicSpot = backendData.find(
-          (dynamic) => dynamic.spot_number === staticSpot.spot_number
-        );
-        return { ...staticSpot, ...dynamicSpot }; // Merge static and dynamic properties
+      const response = await fetch(`http://localhost:5001/parking/slots/${areaId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      setSpots(mergedData);
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const backendData = await response.json();
+      if (!Array.isArray(backendData)) {
+        throw new Error('Invalid data format: expected an array');
+      }
+      const mappedSpots = backendData.map((spot) => ({
+        id: spot.id,
+        reserved: spot.reserved,
+        parked: spot.parked,
+        spot_number: spot.slot_number,
+      }));
+      setSpots(mappedSpots.sort((a, b) => a.id - b.id));
     } catch (error) {
-      console.error("Error fetching parking data:", error);
+      setNotification(`Error loading data: ${error.message}`);
+      setSpots([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const bookSpot = async () => {
     if (!selectedSpot) return;
     try {
-      const response = await fetch("http://localhost:5001/parking/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spot_number: selectedSpot, username }),
+      const response = await fetch('http://localhost:5001/parking/book', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ spot_number: selectedid, username,slot:selectedSpot }),
       });
-
       const data = await response.json();
       if (response.ok) {
-        alert(`Spot ${selectedSpot} booked successfully!`);
+        setNotification(`Spot ${selectedSpot} booked successfully!`);
         setSelectedSpot(null);
-        fetchParkingData(); // Refresh the data
+        setSelectedid(null);
       } else {
-        alert(data.message);
+        setNotification(data.message || 'Booking failed');
       }
     } catch (error) {
-      console.error("Error booking spot:", error);
+      setNotification(`Error booking spot: ${error.message}`);
     }
-  };
-
-  const entryPoint = { x: 50, y: 130 };
-
-  const getPathToSpot = (spot) => {
-    const mainRoadX = spot.x;
-    return `M${entryPoint.x},${entryPoint.y} L${mainRoadX},${entryPoint.y} L${mainRoadX},${spot.y}`;
   };
 
   return (
     <div className="parking-container">
-      <h2>Parking Lot</h2>
-      <div className="relative bg-gray-100 rounded-lg shadow-md" style={{ width: "500px", height: "300px" }}>
-        <svg width="500" height="300" className="absolute top-0 left-0">
-          {/* Main horizontal road */}
-          <path
-            d={`M${entryPoint.x},${entryPoint.y} L470,${entryPoint.y}`}
-            stroke="#888"
-            strokeWidth="10"
-            fill="none"
-          />
-
-          {/* Vertical connecting roads to each spot */}
-          {spots.map((spot) => (
-            <path
-              key={`road-${spot.spot_number}`}
-              d={`M${spot.x},${entryPoint.y} L${spot.x},${spot.y}`}
-              stroke="#888"
-              strokeWidth="6"
-              fill="none"
-            />
-          ))}
-
-          {/* Entry point */}
-          <circle cx={entryPoint.x} cy={entryPoint.y} r="12" fill="#4CAF50" />
-          <text
-            x={entryPoint.x}
-            y={entryPoint.y + 5}
-            textAnchor="middle"
-            fill="white"
-            fontSize="12"
-            fontWeight="bold"
-          >
-            E
-          </text>
-
-          {/* Highlighted path to the selected spot */}
-          {selectedSpot && (
-            <path
-              d={getPathToSpot(
-                spots.find((spot) => spot.spot_number === selectedSpot)
-              )}
-              stroke="#4CAF50"
-              strokeWidth="8"
-              fill="none"
-              strokeLinecap="round"
-            />
-          )}
-
-          {/* Parking spots */}
-          {spots.map((spot) => (
-            <g
-              key={spot.spot_number}
-              onClick={() =>
-                !spot.is_booked &&
-                setSelectedSpot(
-                  selectedSpot === spot.spot_number ? null : spot.spot_number
-                )
-              }
-            >
-              <rect
-                x={spot.x - 20}
-                y={spot.y - 20}
-                width="40"
-                height="40"
-                fill={spot.is_booked ? "#FF0000" : "#3B82F6"}
-                stroke="#1E3A8A"
-                strokeWidth="2"
-                rx="4"
-                className="cursor-pointer"
-              />
-              <text
-                x={spot.x}
-                y={spot.y + 5}
-                textAnchor="middle"
-                fill="white"
-                fontSize="14"
-                fontWeight="bold"
-              >
-                {spot.is_booked ? "🚗" : `Spot ${spot.label}`}
-              </text>
-            </g>
-          ))}
-        </svg>
+      <div className="logo-container">
+        <img src="/assets/logo.jpg" alt="Logo" className="logo-image" />
+        <h1 className="logo-text">ParkEase</h1>
       </div>
 
-      {/* Booking panel */}
+      <div className="top-right-buttons">
+        <button onClick={() => navigate('/profile')}>User Profile</button>
+        <button onClick={() => setShowComplaintForm(true)}>Complaints</button>
+        <button
+          onClick={() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            navigate('/');
+          }}
+          style={{ marginLeft: '10px' }}
+        >
+          Logout
+        </button>
+      </div>
+
+      <button onClick={() => navigate('/main')} className="back-button">
+        Back to Main Page
+      </button>
+
+      <h2>Parking Lot</h2>
+
+      {notification && <div className="notification">{notification}</div>}
+
+      {loading ? (
+        <p className="loading-text">Loading areas...</p>
+      ) : spots.length > 0 ? (
+        <div className="spots-container">
+          {spots.map((spot) => (
+            <div
+              key={spot.id}
+              className={`spot-card ${spot.reserved ? spot.parked? 'parked' : 'reserved' :''}`}
+              onClick={() => {
+                if (!spot.reserved) {
+                  setSelectedSpot(selectedSpot === spot.spot_number ? null : spot.spot_number);
+                  setSelectedid(selectedid === spot.id ? null : spot.id);
+                }
+              }}
+              aria-disabled={spot.reserved}
+            >
+              {spot.reserved && spot.parked ? '🚗' : `Spot ${spot.spot_number}`}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="no-results">No areas found or error occurred.</p>
+      )}
+
       {selectedSpot && (
         <div className="booking-panel">
-          <h3 style={{ color: "red", fontFamily: "Verdana, sans-serif" }}>
-            Confirm Booking
-          </h3>
-          <p style={{ fontFamily: "Verdana, sans-serif" }}>
-            Selected Spot: {selectedSpot}
-          </p>
+          <h3 style={{ color: 'red', fontFamily: 'Verdana, sans-serif' }}>Confirm Booking</h3>
+          <p style={{ fontFamily: 'Verdana, sans-serif' }}>Selected Spot: {selectedSpot}</p>
           <button onClick={bookSpot}>Confirm</button>
         </div>
       )}

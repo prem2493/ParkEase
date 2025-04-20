@@ -1,16 +1,37 @@
-const express = require("express");
-const cors = require("cors");
-// require("dotenv").config(); // Commented out as we're hardcoding Neon connection in routes
+const express = require('express');
+const http = require('http'); 
+const { Server } = require('socket.io'); 
+const cors = require('cors');
 
-const authRoutes = require("./authroutes"); // Ensure filename matches your actual file (case-sensitive)
-const parkingRoutes = require("./parking");
+const authRoutes = require('./authroutes'); 
+const parkingRoutes = require('./parking');
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
-app.use("/auth", authRoutes);
-app.use("/parking", parkingRoutes);
+// Middleware
+app.use(express.json());
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true, 
+}));
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+parkingRoutes.setIo(io);
+
+app.use('/auth', authRoutes);
+app.use('/parking', parkingRoutes);
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
